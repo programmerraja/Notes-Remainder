@@ -9,7 +9,16 @@ import os
 
 class Notes_remainder:
     def __init__(self,window):
+        try:
+           #this function only work on linux 
+           self.os_name=os.uname()
+        except:
+            self.os_name="windows"
         #setting window
+        try:
+            os.mkdir("database")
+        except:
+            pass
         window.destroy()
         self.remainderwindow=t.Tk()
         self.dir=os.getcwd()
@@ -19,7 +28,12 @@ class Notes_remainder:
         self.remainderwindow.resizable(0,0)
         #image
         try:
-          self.image=t.PhotoImage(file=self.dir+"\\image\\bgimg.png")
+          if(self.os_name=="windows"):
+               self.image=t.PhotoImage(file=self.dir+"\\image\\bgimg.png")
+          else:
+              self.image=t.PhotoImage(file=self.dir+"/image/bgimg.png")
+
+              
           self.label=t.Label(self.remainderwindow,image=self.image,width=500,bg="#292929").place(x=0,y=0)
         except:
             messagebox.showinfo("ERROR","image is missing ! ")
@@ -56,18 +70,31 @@ class Notes_remainder:
         if(task_list[0]):
           try:
             a=date.datetime.strptime(task_list[1],"%Y-%m-%d")
-            with sqlite3.connect("notes.db") as self.conn:
-                cur=self.conn.cursor()
-                par=(task_list[0],str(a+add_date)[:11],task_list[2])
-                cur.execute("insert into task(tasks,date,blackmark) values(?,?,?)",par)
-                self.notes_var.set("")
-                self.dates_var.set(td.today())
+            if(self.os_name=="windows"):
+               with sqlite3.connect("database\\notes.db") as self.conn:
+                    cur=self.conn.cursor()
+                    par=(task_list[0],str(a+add_date)[:11],task_list[2])
+                    cur.execute("insert into task(tasks,date,blackmark) values(?,?,?)",par)
+                    self.notes_var.set("")
+                    self.dates_var.set(td.today())
+            else:
+                with sqlite3.connect("database/notes.db") as self.conn:
+                    cur=self.conn.cursor()
+                    par=(task_list[0],str(a+add_date)[:11],task_list[2])
+                    cur.execute("insert into task(tasks,date,blackmark) values(?,?,?)",par)
+                    self.notes_var.set("")
+                    self.dates_var.set(td.today())
           except:
-              messagebox.showinfo("ERROR","Enter a vaild date  ! ")
+                 messagebox.showinfo("ERROR","Enter a vaild date  ! ")
         else:
             messagebox.showinfo("ERROR","Enter your task   ! ")
     def open_file(self):
-            self.conn=sqlite3.connect(self.dir+"\\database\\notes.db")
+            if(self.os_name=="windows"):
+               self.conn=sqlite3.connect(self.dir+"\\database\\notes.db")
+            
+            else:
+                 self.conn=sqlite3.connect(self.dir+"/database/notes.db")
+
             c=self.conn.cursor()
             temp_list=[]
             try:
@@ -134,7 +161,8 @@ class Notes_remainder:
                                         
     def re_add(self):
           for task_list in self.temp_notes:
-                    with sqlite3.connect("notes.db") as self.conn:
+              if(self.os_name=="windows"):
+                    with sqlite3.connect("database\\notes.db") as self.conn:
                         cur=self.conn.cursor()
                         par=(task_list[0],task_list[1],task_list[2])
                         #removing the task 
@@ -142,6 +170,14 @@ class Notes_remainder:
                         #ADD NEW TASK 
                         cur.execute("insert into task(tasks,date,blackmark) values(?,?,?)",par)
                     cur.close()
-                       
+              else:
+                    with sqlite3.connect("database/notes.db") as self.conn:
+                        cur=self.conn.cursor()
+                        par=(task_list[0],task_list[1],task_list[2])
+                        #removing the task 
+                        cur.execute("delete from task where tasks like '%"+task_list[0]+"%'")
+                        #ADD NEW TASK 
+                        cur.execute("insert into task(tasks,date,blackmark) values(?,?,?)",par)
+                    cur.close()
                     
 app=Notes_remainder(t.Tk())
