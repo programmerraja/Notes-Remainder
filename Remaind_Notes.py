@@ -39,6 +39,8 @@ class Notes_remainder:
             messagebox.showinfo("ERROR","image is missing ! ")
             
         self.label=t.Label(self.remainderwindow,text="Enter Your Task Here:",bg="#292929",fg="yellow").place(x=50,y=190)
+        self.rmv_button=t.Button(self.remainderwindow,text="Remove",fg="red",relief="groove",command=lambda :self.remove_task(self.notes_var.get()))
+        self.rmv_button.place(x=435,y=188)
         #var to store a user enter notes
         self.notes_var=t.StringVar()
         self.notes_var.set("")
@@ -68,6 +70,7 @@ class Notes_remainder:
     def add_notes(self,task_list,add_date,):
         
         if(task_list[0]):
+
           try:
             a=date.datetime.strptime(task_list[1],"%Y-%m-%d")
             if(self.os_name=="windows"):
@@ -77,6 +80,11 @@ class Notes_remainder:
                     cur.execute("insert into task(tasks,date,blackmark) values(?,?,?)",par)
                     self.notes_var.set("")
                     self.dates_var.set(td.today())
+                    self.conn.commit()
+                    #updating the notes imedaitely in front end 
+                    self.open_file()
+                    
+                    
             else:
                 with sqlite3.connect("database/notes.db") as self.conn:
                     cur=self.conn.cursor()
@@ -84,6 +92,10 @@ class Notes_remainder:
                     cur.execute("insert into task(tasks,date,blackmark) values(?,?,?)",par)
                     self.notes_var.set("")
                     self.dates_var.set(td.today())
+                    self.conn.commit()
+                     #updating the notes imedaitely in front end 
+                    self.open_file()
+                
           except:
                  messagebox.showinfo("ERROR","Enter a vaild date  ! ")
         else:
@@ -91,7 +103,6 @@ class Notes_remainder:
     def open_file(self):
             if(self.os_name=="windows"):
                self.conn=sqlite3.connect(self.dir+"\\database\\notes.db")
-            
             else:
                  self.conn=sqlite3.connect(self.dir+"/database/notes.db")
 
@@ -110,6 +121,7 @@ class Notes_remainder:
     def update(self,notes):
          if(len(notes)>=1):
              self.text_word["state"]="normal"
+             self.text_word.delete("1.0","end")
              #adding text 
              self.text_word.insert("1.0" ,"task             Date        Blackmark\n")
              self.text_word.insert("2.0","_________________________________________\n")
@@ -121,7 +133,6 @@ class Notes_remainder:
              #if any task date need to update 
              if(len(self.temp_notes)>0):
                 self.re_add()
-             
     #checking the notes date
     def check(self,task,task_date,blackmark):
                         #converting str to data object for adding
@@ -131,7 +142,7 @@ class Notes_remainder:
                        
                         #if today is task day it return  empty
                        if(str(today_date-task_date)[0:2]=="0:"):
-                            messagebox.showinfo("TASk","Today You Need  "+task+"revice this ")
+                            messagebox.showinfo("TASk","Today You Need To Revice "+task)
                             ans=messagebox.askquestion("Question","Did you revising ? ")
                             if(ans=="no"):
                                 blackmark=int(blackmark)
@@ -144,7 +155,7 @@ class Notes_remainder:
                                 self.temp_notes.append([task,str(task_date)[:10],str(blackmark)])
                         
                        elif(int(str(today_date-task_date)[0:2])>0):
-                            messagebox.showinfo("TASk","You missed to Revice The"+task)
+                            messagebox.showinfo("TASk","You missed to Revice The "+task)
                             ans=messagebox.askquestion("question","Did you revise that ? ")
                             if(ans=="no"):
                                 blackmark=int(blackmark)
@@ -179,5 +190,42 @@ class Notes_remainder:
                         #ADD NEW TASK 
                         cur.execute("insert into task(tasks,date,blackmark) values(?,?,?)",par)
                     cur.close()
+    def remove_task(self,task):
+               self.notes_var.set("")
+               if(self.os_name=="windows"):
+                    with sqlite3.connect("database\\notes.db") as self.conn:
+                        cur=self.conn.cursor()
+                        #removing the task
+
+                        cur.execute("delete from task where tasks ='"+task+"'")
+                        self.conn.commit()
+                        #updating the notes imedaitely in front end 
+                    
+                        values=cur.execute("select * from task")
+                        #to clear front end for last one delete
+                        if(len(list(values))==0):
+                            self.text_word["state"]="normal"
+                            self.text_word.delete("1.0","end")
+                            self.text_word["state"]="disabled"
+                        else:
+                             self.open_file()
+               else:
+                    with sqlite3.connect("database/notes.db") as self.conn:
+                        cur=self.conn.cursor()
+                        par=(task_list[0],task_list[1],task_list[2])
+                        #removing the task
+                        cur.execute("delete from task where tasks  ='"+task+"'")
+                        self.conn.commit()
+                       #updating the notes imedaitely in front end 
+                        values=cur.execute("select * from task")
+                        #to clear front end for last one delete
+                        if(not list(values)):
+                            self.text_word["state"]="normal"
+                            self.text_word.delete("1.0","end")
+                            self.text_word["state"]="disabled"
+                        else:
+                             self.open_file()
+                    cur.close()
+        
                     
 app=Notes_remainder(t.Tk())
