@@ -9,31 +9,19 @@ import os
 
 class Notes_remainder:
     def __init__(self,window):
-        try:
-           #this function only work on linux 
-           self.os_name=os.uname()
-        except:
-            self.os_name="windows"
-        #setting window
-        try:
+        #if dir not present create it
+        if (not os.path.isdir("database")):
             os.mkdir("database")
-        except:
-            pass
         window.destroy()
         self.remainderwindow=t.Tk()
         self.dir=os.getcwd()
-        self.remainderwindow.title("Notes Remainder")
+        self.remainderwindow.title("Space Repetition")
         self.remainderwindow.geometry("500x500+400+80")
         self.remainderwindow.configure(bg="#292929")
         self.remainderwindow.resizable(0,0)
         #image
         try:
-          if(self.os_name=="windows"):
-               self.image=t.PhotoImage(file=self.dir+"\\image\\bgimg.png")
-          else:
-              self.image=t.PhotoImage(file=self.dir+"/image/bgimg.png")
-
-              
+          self.image=t.PhotoImage(file=os.path.join(self.dir,"image","bgimg.png"))      
           self.label=t.Label(self.remainderwindow,image=self.image,width=500,bg="#292929").place(x=0,y=0)
         except:
             messagebox.showinfo("ERROR","image is missing ! ")
@@ -70,11 +58,9 @@ class Notes_remainder:
     def add_notes(self,task_list,add_date,):
         
         if(task_list[0]):
-
           try:
-            a=date.datetime.strptime(task_list[1],"%Y-%m-%d")
-            if(self.os_name=="windows"):
-               with sqlite3.connect("database\\notes.db") as self.conn:
+               a=date.datetime.strptime(task_list[1],"%Y-%m-%d")
+               with sqlite3.connect(os.path.join("database","notes.db")) as self.conn:
                     cur=self.conn.cursor()
                     par=(task_list[0],str(a+add_date)[:11],task_list[2])
                     cur.execute("insert into task(tasks,date,blackmark) values(?,?,?)",par)
@@ -83,29 +69,12 @@ class Notes_remainder:
                     self.conn.commit()
                     #updating the notes imedaitely in front end 
                     self.open_file()
-                    
-                    
-            else:
-                with sqlite3.connect("database/notes.db") as self.conn:
-                    cur=self.conn.cursor()
-                    par=(task_list[0],str(a+add_date)[:11],task_list[2])
-                    cur.execute("insert into task(tasks,date,blackmark) values(?,?,?)",par)
-                    self.notes_var.set("")
-                    self.dates_var.set(td.today())
-                    self.conn.commit()
-                     #updating the notes imedaitely in front end 
-                    self.open_file()
-                
           except:
                  messagebox.showinfo("ERROR","Enter a vaild date  ! ")
         else:
             messagebox.showinfo("ERROR","Enter your task   ! ")
-    def open_file(self):
-            if(self.os_name=="windows"):
-               self.conn=sqlite3.connect(self.dir+"\\database\\notes.db")
-            else:
-                 self.conn=sqlite3.connect(self.dir+"/database/notes.db")
-
+    def open_file(self):        
+            self.conn=sqlite3.connect(os.path.join(self.dir,"database","notes.db"))
             c=self.conn.cursor()
             temp_list=[]
             try:
@@ -171,9 +140,8 @@ class Notes_remainder:
     #to re add data to database 
                                         
     def re_add(self):
-          for task_list in self.temp_notes:
-              if(self.os_name=="windows"):
-                    with sqlite3.connect("database\\notes.db") as self.conn:
+                  for task_list in self.temp_notes:
+                    with sqlite3.connect(os.path.join("database","notes.db")) as self.conn:
                         cur=self.conn.cursor()
                         par=(task_list[0],task_list[1],task_list[2])
                         #removing the task 
@@ -181,22 +149,12 @@ class Notes_remainder:
                         #ADD NEW TASK 
                         cur.execute("insert into task(tasks,date,blackmark) values(?,?,?)",par)
                     cur.close()
-              else:
-                    with sqlite3.connect("database/notes.db") as self.conn:
-                        cur=self.conn.cursor()
-                        par=(task_list[0],task_list[1],task_list[2])
-                        #removing the task 
-                        cur.execute("delete from task where tasks like '%"+task_list[0]+"%'")
-                        #ADD NEW TASK 
-                        cur.execute("insert into task(tasks,date,blackmark) values(?,?,?)",par)
-                    cur.close()
+              
     def remove_task(self,task):
-               self.notes_var.set("")
-               if(self.os_name=="windows"):
-                    with sqlite3.connect("database\\notes.db") as self.conn:
+                    self.notes_var.set("")
+                    with sqlite3.connect(os.path.join("database","notes.db")) as self.conn:
                         cur=self.conn.cursor()
                         #removing the task
-
                         cur.execute("delete from task where tasks ='"+task+"'")
                         self.conn.commit()
                         #updating the notes imedaitely in front end 
@@ -204,22 +162,6 @@ class Notes_remainder:
                         values=cur.execute("select * from task")
                         #to clear front end for last one delete
                         if(len(list(values))==0):
-                            self.text_word["state"]="normal"
-                            self.text_word.delete("1.0","end")
-                            self.text_word["state"]="disabled"
-                        else:
-                             self.open_file()
-               else:
-                    with sqlite3.connect("database/notes.db") as self.conn:
-                        cur=self.conn.cursor()
-                        par=(task_list[0],task_list[1],task_list[2])
-                        #removing the task
-                        cur.execute("delete from task where tasks  ='"+task+"'")
-                        self.conn.commit()
-                       #updating the notes imedaitely in front end 
-                        values=cur.execute("select * from task")
-                        #to clear front end for last one delete
-                        if(not list(values)):
                             self.text_word["state"]="normal"
                             self.text_word.delete("1.0","end")
                             self.text_word["state"]="disabled"
